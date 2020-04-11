@@ -5,14 +5,14 @@ var connection = mysql.createConnection({
   host: "localhost",
 
   // Your port; if not 3306
-  port: 8080,
+  port: 3306,
 
   // Your username
   user: "root",
 
   // Your password
   password: "Jade0319!",
-  database: "top_songsDB"
+  database: "employee_db"
 });
 
 connection.connect(function(err) {
@@ -23,172 +23,158 @@ connection.connect(function(err) {
 function runSearch() {
   inquirer
     .prompt({
-      name: "action",
+      name: "input",
       type: "rawlist",
       message: "What would you like to do?",
       choices: [
-        "Find songs by artist",
-        "Find all artists who appear more than once",
-        "Find data within a specific range",
-        "Search for a specific song",
-        "Find artists with a top song and top album in the same year"
+        "View All Employees",
+        "View All Employees by Department",
+        "View All Employees by Manager",
+        "Add Employee",
+        "Add Department"
       ]
     })
     .then(function(answer) {
-      switch (answer.action) {
-      case "Find songs by artist":
-        artistSearch();
+      switch (answer.input) {
+      case "View All Employees":
+        employeeSearch();
         break;
 
-      case "Find all artists who appear more than once":
-        multiSearch();
+      case "View All Employees by Department":
+        employeeSearchByDepartment();
         break;
 
-      case "Find data within a specific range":
-        rangeSearch();
+      case "View All Employees by Manager":
+        employeeSearchByManager();
         break;
 
-      case "Search for a specific song":
-        songSearch();
+      case "Add Employee":
+        addEmployee();
         break;
 
-      case "Find artists with a top song and top album in the same year":
-        songAndAlbumSearch();
+      case "Add Department":
+        addDepartment();
         break;
+
+      
       }
     });
 }
 
-function artistSearch() {
-  inquirer
-    .prompt({
-      name: "artist",
-      type: "input",
-      message: "What artist would you like to search for?"
-    })
-    .then(function(answer) {
-      var query = "SELECT position, song, year FROM top5000 WHERE ?";
-      connection.query(query, { artist: answer.artist }, function(err, res) {
-        for (var i = 0; i < res.length; i++) {
-          console.log("Position: " + res[i].position + " || Song: " + res[i].song + " || Year: " + res[i].year);
-        }
-        runSearch();
-      });
-    });
-}
-
-function multiSearch() {
-  var query = "SELECT artist FROM top5000 GROUP BY artist HAVING count(*) > 1";
+function employeeSearch() {
+  var query = "select emp.first_name as FIRST_NAME, emp.last_name as LAST_NAME, rol.title as TITLE, rol.salary as SALARY, dep.name as DEP_NAME, concat(man.first_name , ' ' , man.last_name) as MANAGER " + 
+  "from employee emp join role rol  on emp.role_id = rol.id join department dep on  dep.id = rol.department_id " +
+  "left join employee man on  emp.manager_id = man.id";
   connection.query(query, function(err, res) {
+    console.log("FIRST_NAME   " + "LAST_NAME   " + "TITLE   " + "SALARY   " +  "DEP_NAME   " + "MANAGER   " );
+    console.log("*************" + "************" + "********" + "*********" +  "***********" + "**********" );
+    //console.log(res);
     for (var i = 0; i < res.length; i++) {
-      console.log(res[i].artist);
+      console.log(res[i].FIRST_NAME + "    " + res[i].LAST_NAME + "    " + res[i].TITLE + "    " + res[i].SALARY + "    " + res[i].DEP_NAME + "    " + res[i].MANAGER + "   " );
     }
     runSearch();
   });
 }
 
-function rangeSearch() {
+function employeeSearchByDepartment() {
   inquirer
-    .prompt([
-      {
-        name: "start",
-        type: "input",
-        message: "Enter starting position: ",
-        validate: function(value) {
-          if (isNaN(value) === false) {
-            return true;
-          }
-          return false;
-        }
-      },
-      {
-        name: "end",
-        type: "input",
-        message: "Enter ending position: ",
-        validate: function(value) {
-          if (isNaN(value) === false) {
-            return true;
-          }
-          return false;
-        }
+  .prompt({
+    name: "department",
+    type: "rawlist",
+    message: "What department do you want to check?",
+    choices: [
+      "IT",
+      "Accounts",
+      "Admin"
+    ]
+  })
+  .then(function(answer) {
+    console.log(answer.department);
+    connection.query("SELECT emp.first_name as FIRST_NAME, emp.last_name as LAST_NAME from employee emp join role rol  on emp.role_id = rol.id join department dep on  dep.id = rol.department_id " +
+    "left join employee man on  emp.manager_id = man.id  WHERE ?", { name: answer.department }, function(err, res) {
+      console.log("FIRST_NAME   " + "LAST_NAME   " );
+      console.log("*************" + "************"  );
+      //console.log(res);
+      for (var i = 0; i < res.length; i++) {
+        console.log(res[i].FIRST_NAME + "  " + res[i].LAST_NAME );
       }
-    ])
-    .then(function(answer) {
-      var query = "SELECT position,song,artist,year FROM top5000 WHERE position BETWEEN ? AND ?";
-      connection.query(query, [answer.start, answer.end], function(err, res) {
-        for (var i = 0; i < res.length; i++) {
-          console.log(
-            "Position: " +
-              res[i].position +
-              " || Song: " +
-              res[i].song +
-              " || Artist: " +
-              res[i].artist +
-              " || Year: " +
-              res[i].year
-          );
-        }
-        runSearch();
-      });
+      runSearch();
     });
+  });
 }
 
-function songSearch() {
+function employeeSearchByManager() {
+  var query = "select concat(emp.first_name , ' ' , emp.last_name) as employee, concat(man.first_name , ' ' , man.last_name) as manager  " +
+  "from employee emp  join employee man on  emp.manager_id = man.id";
+  connection.query(query, function(err, res) {
+    console.log("EMPLOYEE NAME       " + "MANAGER NAME       " );
+    console.log("*************       " + "************       "  );
+    for (var i = 0; i < res.length; i++) {
+      console.log(res[i].employee + "           " + res[i].manager + "  " );
+    }
+    runSearch();
+  });
+}
+
+function addEmployee() {
   inquirer
-    .prompt({
-      name: "song",
-      type: "input",
-      message: "What song would you like to look for?"
-    })
-    .then(function(answer) {
-      console.log(answer.song);
-      connection.query("SELECT * FROM top5000 WHERE ?", { song: answer.song }, function(err, res) {
-        console.log(
-          "Position: " +
-            res[0].position +
-            " || Song: " +
-            res[0].song +
-            " || Artist: " +
-            res[0].artist +
-            " || Year: " +
-            res[0].year
-        );
-        runSearch();
-      });
+  .prompt([{
+    name: "first_name",
+    type: "input",
+    message: "Enter First Name: "
+  },
+  {
+    name: "last_name",
+    type: "input",
+    message: "Enter Last Name: "
+  },
+  {
+    name: "role_id",
+    type: "rawlist",
+    message: "Select Role Id: ",
+    choices: [
+      "1",
+      "2",
+      "3",
+      "4"
+    ]
+  },
+  {
+    name: "manager_id",
+    type: "rawlist",
+    message: "Select Manager Id: ",
+    choices: [
+     "2",
+     "6",
+     "8"
+    ]
+  }]
+  )
+  .then(function(answer) {
+    
+    const input = [answer.first_name, answer.last_name, answer.role_id, answer.manager_id];
+    connection.query("insert into employee (first_name, last_name, role_id, manager_id) values (?,?,?,?)", input, function(err, res, fields) {
+      console.log('Todo Id:' + res.insertId);
+      runSearch();
     });
+  });
 }
 
-function songAndAlbumSearch() {
+function addDepartment() {
   inquirer
-    .prompt({
-      name: "artist",
-      type: "input",
-      message: "What artist would you like to search for?"
-    })
-    .then(function(answer) {
-      var query = "SELECT top_albums.year, top_albums.album, top_albums.position, top5000.song, top5000.artist ";
-      query += "FROM top_albums INNER JOIN top5000 ON (top_albums.artist = top5000.artist AND top_albums.year ";
-      query += "= top5000.year) WHERE (top_albums.artist = ? AND top5000.artist = ?) ORDER BY top_albums.year, top_albums.position";
-
-      connection.query(query, [answer.artist, answer.artist], function(err, res) {
-        console.log(res.length + " matches found!");
-        for (var i = 0; i < res.length; i++) {
-          console.log(
-            i+1 + ".) " +
-              "Year: " +
-              res[i].year +
-              " Album Position: " +
-              res[i].position +
-              " || Artist: " +
-              res[i].artist +
-              " || Song: " +
-              res[i].song +
-              " || Album: " +
-              res[i].album
-          );
-        }
-
-        runSearch();
-      });
+  .prompt({
+    name: "department_name",
+    type: "input",
+    message: "Enter Department Name: "
+  }
+  )
+  .then(function(answer) {
+    
+    const input = answer.department_name;
+    connection.query("insert into department (name) values (?)", input, function(err, res, fields) {
+      console.log('Todo Id:' + res.insertId);
+      runSearch();
     });
+  });
 }
+

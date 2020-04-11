@@ -30,6 +30,10 @@ CREATE TABLE employee
     FOREIGN KEY (manager_id) REFERENCES employee(id)
 );
 
+select emp.first_name, emp.last_name, rol.title, rol.salary, dep.name
+from employee emp join role rol  on emp.role_id = rol.id join department dep dep.id = rol.department_id
+;
+
 insert into department (name) values ("IT");
 insert into department (name) values ("Accounts");
 insert into department (name) values ("Admin");
@@ -43,6 +47,10 @@ insert into employee (first_name, last_name, role_id, manager_id) values ("Neena
 insert into employee (first_name, last_name, role_id, manager_id) values ("Kiran","Alam",2,2);
 insert into employee (first_name, last_name, role_id, manager_id) values ("Warren","Berra",1,null);
 insert into employee (first_name, last_name, role_id, manager_id) values ("Alan","Dizol",2,2);
+insert into employee (first_name, last_name, role_id, manager_id) values ("Steve","Baker",1,null);
+insert into employee (first_name, last_name, role_id, manager_id) values ("Nadhiya","Katta",3,6);
+insert into employee (first_name, last_name, role_id, manager_id) values ("Terrance","Hill",1,null);
+insert into employee (first_name, last_name, role_id, manager_id) values ("Shawn","Ahmed",4,8);
 
 
 
